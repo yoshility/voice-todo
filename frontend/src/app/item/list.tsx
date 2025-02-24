@@ -2,8 +2,12 @@ import { FlatList, Text, TouchableOpacity, View, TextInput, Alert } from 'react-
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
 import { AntDesign } from '@expo/vector-icons'
+import Modal from 'react-native-modal'
 
 import Header from '../../components/Header'
+
+// API_URL = 'http://192.168.3.5:8000/api/items/' // home
+// API_URL = 'http://10.100.118.255:8000/api/items/' // school
 
 interface Item {
 	id: number
@@ -12,14 +16,16 @@ interface Item {
 }
 
 const List = (): JSX.Element => {
+	// ------------------------------ Hooks ------------------------------
 	const [inputValue, setInputValue] = useState('')
 	const [items, setItems] = useState<Item[]>([])
+	const [isModalVisible, setIsModalVisible] = useState(false)
 
-	// ---------- Get item ----------
+	// ------------------------------ Get item ------------------------------
 	useEffect(() => {
 		const fecthItems = async () => {
 			try {
-				const response = await fetch('http://192.168.3.5:8000/api/items/')
+				const response = await fetch('http://10.100.118.255:8000/api/items/')
 				console.log('connected!')
 				if (!response.ok) {
 					console.error('Failed to get items:', response)
@@ -34,10 +40,10 @@ const List = (): JSX.Element => {
 		fecthItems()
 	}, [])
 
-	// ---------- Send item ----------
-	const handleSend = async () => {
+	// ------------------------------ Send item ------------------------------
+	const handleSend = async (value: string) => {
 		const newItem = {
-			name: inputValue,
+			name: value,
 			created_at: new Date().toLocaleString('ja-JP', {
 				year: 'numeric',
 				month: '2-digit',
@@ -48,7 +54,7 @@ const List = (): JSX.Element => {
 			})
 		}
 		try {
-			const response = await fetch('http://192.168.3.5:8000/api/items/', {
+			const response = await fetch('http://10.100.118.255:8000/api/items/', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -68,7 +74,7 @@ const List = (): JSX.Element => {
 		}
 	}
 
-	// ---------- Delete item ----------
+	// ------------------------------ Delete item ------------------------------
 	const handleDelete = (id: number) => {
 		Alert.alert('メモを削除します', 'よろしいですか？', [
 			{
@@ -78,7 +84,7 @@ const List = (): JSX.Element => {
 				text: '削除',
 				onPress: async () => {
 					try {
-						const response = await fetch('http://192.168.3.5:8000/api/items/'+id+'/', {
+						const response = await fetch('http://10.100.118.255:8000/api/items/'+id+'/', {
 							method: 'DELETE'
 						})
 						if (!response.ok) {
@@ -123,7 +129,7 @@ const List = (): JSX.Element => {
 				/>
 			</View>
 
-			{/* Input and Voice */}
+			{/* Input form */}
 			<View className='bg-green-100 px-4 py-2'>
 				<View className='flex-row items-center justify-between px-4 py-2 border rounded-full'>
 					<TextInput
@@ -135,17 +141,34 @@ const List = (): JSX.Element => {
 					{inputValue ? (
 						<TouchableOpacity
 							className='bg-green-500 h-12 w-12 rounded-full justify-center items-center'
-							onPress={handleSend}
+							onPress={() => handleSend(inputValue)}
 						>
 							<Text>Send</Text>
 						</TouchableOpacity>
 					) : (
-						<TouchableOpacity className='bg-green-500 h-12 w-12 rounded-full justify-center items-center'>
+						<TouchableOpacity
+							className='bg-green-500 h-12 w-12 rounded-full justify-center items-center'
+							onPress={() => setIsModalVisible(true)}
+						>
 							<Text>Mic</Text>
 						</TouchableOpacity>
 					)}
 				</View>
 			</View>
+
+			{/* Modal for voice recognition */}
+			<Modal
+				isVisible={isModalVisible}
+				onBackdropPress={() => setIsModalVisible(false)}
+				swipeDirection={['down']}
+				className='justify-end m-0'
+			>
+				<View className='bg-white h-1/3 p-7 rounded-t-3xl items-center'>
+					<Text className='text-2xl'>認識中...</Text>
+					<Text>背景をタップしてキャンセル</Text>
+					<Text className='mt-10'>~~~~</Text>
+				</View>
+			</Modal>
 		</View>
 	)
 }
